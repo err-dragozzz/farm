@@ -48,30 +48,39 @@ export function ReportsClient() {
   const stats = [
     {
       title: "Total Income",
+
       value: currency(
-        data?.totals.income
+        data?.totals?.income ?? 0
       ),
+
       icon: Wallet,
+
       glow:
         "from-green-500/20 to-emerald-500/5"
     },
 
     {
       title: "Total Expenses",
+
       value: currency(
-        data?.totals.expenses
+        data?.totals?.expenses ?? 0
       ),
+
       icon: DollarSign,
+
       glow:
         "from-red-500/20 to-orange-500/5"
     },
 
     {
       title: "Net Profit",
+
       value: currency(
-        data?.totals.profit
+        data?.totals?.profit ?? 0
       ),
+
       icon: TrendingUp,
+
       glow:
         "from-cyan-500/20 to-blue-500/5"
     }
@@ -143,22 +152,21 @@ export function ReportsClient() {
               asChild
               className="
                 h-11
-rounded-xl
-border
-border-green-500/20
-bg-gradient-to-b
-from-green-500
-to-green-600
-px-6
-text-white
-font-medium
-shadow-[0_4px_20px_rgba(34,197,94,0.18)]
-transition-all
-duration-200
-hover:brightness-110
-hover:shadow-[0_6px_24px_rgba(34,197,94,0.28)]
-active:scale-[0.98]
-
+                rounded-xl
+                border
+                border-green-500/20
+                bg-gradient-to-b
+                from-green-500
+                to-green-600
+                px-6
+                font-medium
+                text-white
+                shadow-[0_4px_20px_rgba(34,197,94,0.18)]
+                transition-all
+                duration-200
+                hover:brightness-110
+                hover:shadow-[0_6px_24px_rgba(34,197,94,0.28)]
+                active:scale-[0.98]
               "
             >
               <a href="/api/reports?format=pdf">
@@ -306,7 +314,7 @@ active:scale-[0.98]
                   }}
                   formatter={(value) =>
                     currency(
-                      Number(value)
+                      Number(value ?? 0)
                     )
                   }
                 />

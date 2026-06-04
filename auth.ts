@@ -1,4 +1,4 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -6,71 +6,29 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 
-
-callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.id = String(user.id ?? token.sub ?? "");
-
-      token.role =
-        (
-          user as {
-            role?: "farmer" | "manager" | "admin";
-          }
-        ).role ?? "farmer";
-    }
-
-    if (!token.role && token.email) {
-      const dbUser = await prisma.user.findUnique({
-        where: {
-          email: token.email
-        }
-      });
-
-      token.id = String(
-        dbUser?.id ?? token.sub ?? ""
-      );
-
-      token.role =
-        dbUser?.role ?? "farmer";
-    }
-
-    return token as typeof token & {
-      id: string;
-      role: string;
-    };
-  },
-
-  async session({ session, token }) {
-    if (session.user) {
-      session.user.id = String(
-        (token as { id?: string }).id ?? ""
-      );
-
-      session.user.role = String(
-        (token as { role?: string }).role ??
-          "farmer"
-      );
-    }
-
-    return session;
-  }
-}
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       role: string;
-    } & DefaultSession["user"];
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
   }
 
   interface User {
+    id: string;
     role: string;
   }
 }
 
-
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut
+} = NextAuth({
   adapter: PrismaAdapter(prisma),
 
   session: {
@@ -83,8 +41,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? ""
+      clientId:
+        process.env.GOOGLE_CLIENT_ID ?? "",
+
+      clientSecret:
+        process.env.GOOGLE_CLIENT_SECRET ??
+        ""
     }),
 
     Credentials({
@@ -118,10 +80,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const valid = await bcrypt.compare(
-          password,
-          user.password
-        );
+        const valid =
+          await bcrypt.compare(
+            password,
+            user.password
+          );
 
         if (!valid) {
           return null;
@@ -131,7 +94,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           name: user.name,
           email: user.email,
-          image: user.avatar ?? user.image,
+          image:
+            user.avatar ?? user.image,
           role: user.role
         };
       }
@@ -141,32 +105,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = String(
-          user.id ?? token.sub ?? ""
-        );
-
-        token.role =
-          (
-            user as {
-              role?: "farmer" | "manager" | "admin";
-            }
-          ).role ?? "farmer";
-      }
-
-      if (!token.role && token.email) {
-        const dbUser =
-          await prisma.user.findUnique({
-            where: {
-              email: token.email
-            }
-          });
-
-        token.id = String(
-          dbUser?.id ?? token.sub ?? ""
-        );
-
-        token.role =
-          dbUser?.role ?? "farmer";
+        token.id = user.id;
+        token.role = user.role;
       }
 
       return token;
@@ -174,7 +114,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = String(token.id);
+        session.user.id = String(
+          token.id ?? ""
+        );
 
         session.user.role = String(
           token.role ?? "farmer"

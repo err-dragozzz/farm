@@ -15,7 +15,10 @@ export async function currentUser(): Promise<ApiUser | null> {
   if (!session?.user?.id) return null;
   return {
     id: session.user.id,
-    role: session.user.role,
+    role: session.user.role as
+  | "farmer"
+  | "manager"
+  | "admin",
     email: session.user.email,
     name: session.user.name
   };
