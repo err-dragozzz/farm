@@ -6,6 +6,56 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 
+
+callbacks: {
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = String(user.id ?? token.sub ?? "");
+
+      token.role =
+        (
+          user as {
+            role?: "farmer" | "manager" | "admin";
+          }
+        ).role ?? "farmer";
+    }
+
+    if (!token.role && token.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: {
+          email: token.email
+        }
+      });
+
+      token.id = String(
+        dbUser?.id ?? token.sub ?? ""
+      );
+
+      token.role =
+        dbUser?.role ?? "farmer";
+    }
+
+    return token as typeof token & {
+      id: string;
+      role: string;
+    };
+  },
+
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.id = String(
+        (token as { id?: string }).id ?? ""
+      );
+
+      session.user.role = String(
+        (token as { role?: string }).role ??
+          "farmer"
+      );
+    }
+
+    return session;
+  }
+}
 declare module "next-auth" {
   interface Session {
     user: {
@@ -19,12 +69,6 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    role: string;
-  }
-}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
