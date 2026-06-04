@@ -1,8 +1,12 @@
-import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+export function middleware(
+  request: NextRequest
+) {
+  const token = request.cookies.get(
+    "authjs.session-token"
+  );
 
   const protectedRoutes = [
     "/dashboard",
@@ -16,19 +20,21 @@ export default auth((req) => {
     "/admin"
   ];
 
-  const isProtected = protectedRoutes.some(
-    (route) =>
-      req.nextUrl.pathname.startsWith(route)
-  );
+  const isProtected =
+    protectedRoutes.some((route) =>
+      request.nextUrl.pathname.startsWith(
+        route
+      )
+    );
 
-  if (isProtected && !isLoggedIn) {
+  if (isProtected && !token) {
     return NextResponse.redirect(
-      new URL("/login", req.url)
+      new URL("/login", request.url)
     );
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
